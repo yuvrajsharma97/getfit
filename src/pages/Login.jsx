@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FcGoogle } from 'react-icons/fc';
 import { HiMail, HiLockClosed } from 'react-icons/hi';
 import { useAuth } from '../context/AuthContext';
+import { hasCompletedOnboarding } from '../services/firestore';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 
@@ -16,11 +17,24 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
-      console.log('User already logged in, redirecting to dashboard');
-      setLocalLoading(false); // Reset loading state before redirect
-      navigate('/dashboard');
-    }
+    const checkAndRedirect = async () => {
+      if (user) {
+        console.log('User already logged in, checking onboarding status...');
+        const completed = await hasCompletedOnboarding(user.uid);
+
+        if (completed) {
+          console.log('Onboarding completed, redirecting to dashboard');
+          navigate('/dashboard');
+        } else {
+          console.log('Onboarding not completed, redirecting to onboarding');
+          navigate('/onboarding');
+        }
+
+        setLocalLoading(false); // Reset loading state before redirect
+      }
+    };
+
+    checkAndRedirect();
   }, [user, navigate]);
 
   const getErrorMessage = (errorCode) => {

@@ -8,18 +8,35 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Modern SaaS Color Palette
+        // Momotaro Health & Fitness Color Palette
         primary: {
-          50: '#EEF2FF',
-          100: '#E0E7FF',
-          200: '#C7D2FE',
-          300: '#A5B4FC',
-          400: '#818CF8',
-          500: '#6366F1', // Main primary color
-          600: '#4F46E5',
-          700: '#4338CA',
-          800: '#3730A3',
-          900: '#312E81',
+          DEFAULT: '#7B68EE',
+          50: '#F5F3FF',
+          100: '#EDE9FE',
+          200: '#DDD6FE',
+          300: '#C4B5FD',
+          400: '#A78BFA',
+          500: '#7B68EE',
+          600: '#6C63FF',
+          700: '#5B4FD6',
+          800: '#4A3FB3',
+          900: '#3A3290',
+        },
+        cyan: {
+          DEFAULT: '#4ECDC4',
+          400: '#5DDBCD',
+          500: '#4ECDC4',
+          600: '#3DBDB4',
+        },
+        coral: {
+          DEFAULT: '#FF6B6B',
+          400: '#FFB4A2',
+          500: '#FF6B6B',
+        },
+        navy: {
+          DEFAULT: '#2C3E50',
+          600: '#34495E',
+          700: '#2C3E50',
         },
         gray: {
           50: '#F9FAFB',
@@ -74,10 +91,11 @@ export default {
         '128': '32rem',
       },
       borderRadius: {
-        'DEFAULT': '0.5rem',
-        'lg': '0.75rem',
-        'xl': '1rem',
-        '2xl': '1.5rem',
+        'DEFAULT': '0.75rem',
+        'lg': '1rem',
+        'xl': '0.75rem',
+        '2xl': '1rem',
+        '3xl': '1.5rem',
       },
       boxShadow: {
         'soft': '0 2px 8px 0 rgba(0, 0, 0, 0.05)',
@@ -118,9 +136,15 @@ export default {
       transitionDuration: {
         '250': '250ms',
       },
+      backgroundImage: {
+        'gradient-purple': 'linear-gradient(135deg, #7B68EE 0%, #6C63FF 100%)',
+        'gradient-coral': 'linear-gradient(135deg, #FB923C 0%, #FF6B6B 50%, #FDA4AF 100%)',
+        'gradient-navy': 'linear-gradient(135deg, #334155 0%, #1E293B 100%)',
+        'gradient-lavender': 'linear-gradient(135deg, #C084FC 0%, #818CF8 100%)',
+      },
     },
   },
-  plugins: [require("daisyui")],
+  plugins: [require("daisyui"), require("tailwind-scrollbar-hide")],
   daisyui: {
     themes: [
       {

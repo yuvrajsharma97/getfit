@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, getDocs, query, where, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, collection, getDocs, query, where, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 
 /**
@@ -343,5 +343,188 @@ export const getExerciseCacheMetadata = async () => {
       lastUpdated: null,
       totalExercises: 0,
     };
+  }
+};
+
+// ==================== WORKOUT MANAGEMENT FUNCTIONS ====================
+
+/**
+ * Save a workout template to user's routines
+ * @param {string} userId - The user's unique ID
+ * @param {Object} workoutTemplate - The workout template to save
+ * @returns {Promise<string>} - Returns the routine ID
+ */
+export const saveWorkoutToUser = async (userId, workoutTemplate) => {
+  try {
+    console.log(`Saving workout to user ${userId}:`, workoutTemplate.name);
+
+    const routinesRef = collection(db, 'users', userId, 'routines');
+    const routineData = {
+      ...workoutTemplate,
+      isCustom: workoutTemplate.isCustom || false,
+      isActive: false,
+      startedAt: null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    // Use addDoc to automatically generate an ID and return the document reference
+    const docRef = await addDoc(routinesRef, routineData);
+    console.log('Workout saved successfully with ID:', docRef.id);
+
+    return docRef.id;
+  } catch (error) {
+    console.error('Error saving workout to user:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get all workouts for a user
+ * @param {string} userId - The user's unique ID
+ * @returns {Promise<Array>}
+ */
+export const getUserWorkouts = async (userId) => {
+  try {
+    console.log(`Fetching workouts for user ${userId}`);
+
+    const routinesRef = collection(db, 'users', userId, 'routines');
+    const snapshot = await getDocs(routinesRef);
+
+    const routines = [];
+    snapshot.forEach((doc) => {
+      routines.push({ id: doc.id, ...doc.data() });
+    });
+
+    console.log(`Found ${routines.length} workouts`);
+    return routines;
+  } catch (error) {
+    console.error('Error fetching user workouts:', error);
+    return [];
+  }
+};
+
+/**
+ * Get a specific workout by ID
+ * @param {string} userId - The user's unique ID
+ * @param {string} routineId - The routine ID
+ * @returns {Promise<Object|null>}
+ */
+export const getUserWorkout = async (userId, routineId) => {
+  try {
+    const routineRef = doc(db, 'users', userId, 'routines', routineId);
+    const routineSnap = await getDoc(routineRef);
+
+    if (routineSnap.exists()) {
+      return { id: routineSnap.id, ...routineSnap.data() };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error fetching workout:', error);
+    return null;
+  }
+};
+
+/**
+ * Update a user's workout
+ * @param {string} userId - The user's unique ID
+ * @param {string} routineId - The routine ID
+ * @param {Object} updates - Data to update
+ * @returns {Promise<void>}
+ */
+export const updateUserWorkout = async (userId, routineId, updates) => {
+  try {
+    console.log(`Updating workout ${routineId} for user ${userId}`);
+
+    const routineRef = doc(db, 'users', userId, 'routines', routineId);
+    await updateDoc(routineRef, {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log('Workout updated successfully');
+  } catch (error) {
+    console.error('Error updating workout:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a user's workout
+ * @param {string} userId - The user's unique ID
+ * @param {string} routineId - The routine ID
+ * @returns {Promise<void>}
+ */
+export const deleteUserWorkout = async (userId, routineId) => {
+  try {
+    console.log(`Deleting workout ${routineId} for user ${userId}`);
+
+    const routineRef = doc(db, 'users', userId, 'routines', routineId);
+    await deleteDoc(routineRef);
+
+    console.log('Workout deleted successfully');
+  } catch (error) {
+    console.error('Error deleting workout:', error);
+    throw error;
+  }
+};
+
+/**
+ * Set a workout as active (deactivates other workouts)
+ * @param {string} userId - The user's unique ID
+ * @param {string} routineId - The routine ID to activate
+ * @returns {Promise<void>}
+ */
+export const setActiveWorkout = async (userId, routineId) => {
+  try {
+    console.log(`Setting active workout ${routineId} for user ${userId}`);
+
+    const routinesRef = collection(db, 'users', userId, 'routines');
+    const snapshot = await getDocs(routinesRef);
+
+    const batch = writeBatch(db);
+
+    // Deactivate all workouts
+    snapshot.forEach((docSnap) => {
+      batch.update(docSnap.ref, { isActive: false });
+    });
+
+    // Activate the selected workout
+    const activeRoutineRef = doc(db, 'users', userId, 'routines', routineId);
+    batch.update(activeRoutineRef, {
+      isActive: true,
+      startedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    await batch.commit();
+    console.log('Active workout set successfully');
+  } catch (error) {
+    console.error('Error setting active workout:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get the active workout for a user
+ * @param {string} userId - The user's unique ID
+ * @returns {Promise<Object|null>}
+ */
+export const getActiveWorkout = async (userId) => {
+  try {
+    const routinesRef = collection(db, 'users', userId, 'routines');
+    const q = query(routinesRef, where('isActive', '==', true));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      return null;
+    }
+
+    const activeDoc = snapshot.docs[0];
+    return { id: activeDoc.id, ...activeDoc.data() };
+  } catch (error) {
+    console.error('Error fetching active workout:', error);
+    return null;
   }
 };
